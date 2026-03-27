@@ -23,6 +23,12 @@ EXCLUDE_PATTERNS=""
 DRY_RUN=false
 WORK_DIR=$(mktemp -d)
 
+cleanup() {
+  if [[ -d "$WORK_DIR" ]]; then
+    rm -rf "$WORK_DIR"
+  fi
+}
+
 # ---------- parse args ----------
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -58,6 +64,11 @@ fi
 if [[ ! -d "$LOCAL_PATH" ]]; then
   echo "Error: Local path does not exist: $LOCAL_PATH"
   exit 1
+fi
+
+# Clean up work dir on exit unless --dry-run (user needs to inspect it)
+if [[ "$DRY_RUN" == false ]]; then
+  trap cleanup EXIT
 fi
 
 UPSTREAM_BASENAME=$(basename "$UPSTREAM_URL" .git)
@@ -233,5 +244,7 @@ echo "       version = \"$UPSTREAM_TAG\","
 echo "       patches = [\"//patches:<patch_file>\"],"
 echo "       patch_strip = 1,"
 echo "   )"
-echo ""
-echo "Work directory (delete when done): $WORK_DIR"
+if [[ "$DRY_RUN" == true ]]; then
+  echo ""
+  echo "Work directory (delete when done): $WORK_DIR"
+fi
